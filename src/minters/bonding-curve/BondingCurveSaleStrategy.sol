@@ -50,9 +50,12 @@ contract BondingCurveSaleStrategy is Enjoy, SaleStrategy {
     error WrongValueSent();
     error SaleEnded();
     error SaleHasNotStarted();
+    error SaleHasNotEnded();
+    error UnauthorizedWithdraw();
 
     event SaleSet(address indexed mediaContract, uint256 indexed tokenId, SalesConfig salesConfig);
     event MintComment(address indexed sender, address indexed tokenContract, uint256 indexed tokenId, uint256 quantity, string comment);
+    event Withdraw(address indexed recipient, uint256 indexed tokenId, uint256 amount);
 
     /// @notice Compiles and returns the commands needed to mint a token using this sales strategy
     /// @param tokenId The token ID to mint
@@ -88,16 +91,15 @@ contract BondingCurveSaleStrategy is Enjoy, SaleStrategy {
         }
 
         // bonding curve math to compute new price, inspired by stealcam bonding curve
-        currentPrice = tokenPrices[msg.sender][tokenId]
+        currentPrice = tokenPrices[msg.sender][tokenId];
         newPrice = (currentPrice * config.scalingFactor) / 100 + config.basePricePerToken;
         // Check value sent
         if (newPrice != ethValueSent) {
             revert WrongValueSent();
         }
-        tokenPrices[msg.sender][tokenId] = newPrice
+        tokenPrices[msg.sender][tokenId] = newPrice;
 
-        bool shouldTransferFunds = config.fundsRecipient != address(0);
-        commands.setSize(shouldTransferFunds ? 2 : 1);
+        commands.setSize(1);
 
         // Mint command
         commands.mint(mintTo, tokenId, 1);
@@ -110,6 +112,28 @@ contract BondingCurveSaleStrategy is Enjoy, SaleStrategy {
         if (shouldTransferFunds) {
             commands.transfer(config.fundsRecipient, ethValueSent);
         }
+    }
+
+    /// @notice Allows the fundsRecipient of a sale withdraw their funds
+    function withdrawFunds(address factory, uint256 tokenId, address destination) external {
+        SalesConfig storage config = salesConfigs[factory][tokenId];
+        
+        address recipient = config.fundsRecipient;
+
+        if (msg.sender != recipient) {
+            revert UnauthorizedWithdraw();
+        }
+
+        // Check sale end
+        if (block.timestamp < config.saleEnd) {
+            revert SaleHasNotEnded();
+        }
+
+        commands.setSize(1);
+        commands.transfer(destination, address(this).balance);
+
+        // Emit event
+        emit Withdraw(recipient, tokenId, funds);
     }
 
     /// @notice Sets the sale config for a given token
