@@ -31,6 +31,8 @@ contract BondingCurveSaleStrategy is Enjoy, SaleStrategy {
     // target -> tokenId -> token price
     mapping(address => mapping(uint256 => uint256)) internal tokenPrices;
 
+    mapping(address => mapping(uint256 => uint256)) internal funds;
+
     using SaleCommandHelper for ICreatorCommands.CommandSet;
 
     function contractURI() external pure override returns (string memory) {
@@ -108,10 +110,7 @@ contract BondingCurveSaleStrategy is Enjoy, SaleStrategy {
             emit MintComment(mintTo, msg.sender, tokenId, 1, comment);
         }
 
-        // Should transfer funds if funds recipient is set to a non-default address
-        if (shouldTransferFunds) {
-            commands.transfer(config.fundsRecipient, ethValueSent);
-        }
+        funds[msg.sender][tokenId] += ethValueSent;
     }
 
     /// @notice Allows the fundsRecipient of a sale withdraw their funds
@@ -129,11 +128,14 @@ contract BondingCurveSaleStrategy is Enjoy, SaleStrategy {
             revert SaleHasNotEnded();
         }
 
+        amount = funds[factory][tokenId];
+        funds[factory][tokenId] = 0;
+
         commands.setSize(1);
-        commands.transfer(destination, address(this).balance);
+        commands.transfer(destination, amount);
 
         // Emit event
-        emit Withdraw(recipient, tokenId, funds);
+        emit Withdraw(recipient, tokenId, amount);
     }
 
     /// @notice Sets the sale config for a given token
