@@ -14,13 +14,13 @@ import {BondingCurveSaleStrategy} from "../../../src/minters/bonding-curve/Bondi
 
 contract BondingCurveSaleStrategyTest is Test {
     ZoraCreator1155Impl internal target;
-    ZoraCreatorFixedPriceSaleStrategy internal fixedPrice;
+    BondingCurveSaleStrategy internal bondingCurve;
     address payable internal admin = payable(address(0x999));
     address internal zora;
     address internal tokenRecipient;
     address internal fundsRecipient;
 
-    event SaleSet(address indexed mediaContract, uint256 indexed tokenId, ZoraCreatorFixedPriceSaleStrategy.SalesConfig salesConfig);
+    event SaleSet(address indexed mediaContract, uint256 indexed tokenId, BondingCurveSaleStrategy.SalesConfig salesConfig);
     event MintComment(address indexed sender, address indexed tokenContract, uint256 indexed tokenId, uint256 quantity, string comment);
 
     function setUp() external {
@@ -38,57 +38,57 @@ contract BondingCurveSaleStrategyTest is Test {
     }
 
     function test_ContractName() external {
-        assertEq(fixedPrice.contractName(), "Fixed Price Sale Strategy");
+        assertEq(bondingCurve.contractName(), "Bonding Curve Sale Strategy");
     }
 
     function test_Version() external {
-        assertEq(fixedPrice.contractVersion(), "1.1.0");
+        assertEq(bondingCurve.contractVersion(), "1.1.0");
     }
 
     function test_MintFlow() external {
         vm.startPrank(admin);
         uint256 newTokenId = target.setupNewToken("https://zora.co/testing/token.json", 10);
-        target.addPermission(newTokenId, address(fixedPrice), target.PERMISSION_BIT_MINTER());
+        target.addPermission(newTokenId, address(bondingCurve), target.PERMISSION_BIT_MINTER());
         vm.expectEmit(true, true, true, true);
         emit SaleSet(
             address(target),
             newTokenId,
-            ZoraCreatorFixedPriceSaleStrategy.SalesConfig({
-                pricePerToken: 1 ether,
+            BondingCurveSaleStrategy.SalesConfig({
                 saleStart: 0,
                 saleEnd: type(uint64).max,
-                maxTokensPerAddress: 0,
-                fundsRecipient: address(0)
+                basePricePerToken: 1 ether,
+                scalingFactor: 110,
+                fundsRecipient: fundsRecipient
             })
         );
         target.callSale(
             newTokenId,
-            fixedPrice,
+            bondingCurve,
             abi.encodeWithSelector(
-                ZoraCreatorFixedPriceSaleStrategy.setSale.selector,
+                BondingCurveSaleStrategy.setSale.selector,
                 newTokenId,
-                ZoraCreatorFixedPriceSaleStrategy.SalesConfig({
-                    pricePerToken: 1 ether,
+                BondingCurveSaleStrategy.SalesConfig({
                     saleStart: 0,
                     saleEnd: type(uint64).max,
-                    maxTokensPerAddress: 0,
-                    fundsRecipient: address(0)
+                    basePricePerToken: 1 ether,
+                    scalingFactor: 110,
+                    fundsRecipient: fundsRecipient
                 })
             )
         );
         vm.stopPrank();
 
-        uint256 numTokens = 10;
+        uint256 numTokens = 1;
         uint256 totalReward = target.computeTotalReward(numTokens);
         uint256 totalValue = (1 ether * numTokens) + totalReward;
 
         vm.deal(tokenRecipient, totalValue);
 
         vm.startPrank(tokenRecipient);
-        target.mint{value: totalValue}(fixedPrice, newTokenId, 10, abi.encode(tokenRecipient, ""));
+        target.mint{value: totalValue}(bondingCurve, newTokenId, 1, abi.encode(tokenRecipient, ""));
 
-        assertEq(target.balanceOf(tokenRecipient, newTokenId), 10);
-        assertEq(address(target).balance, 10 ether);
+        assertEq(target.balanceOf(tokenRecipient, newTokenId), 1);
+        assertEq(address(target).balance, 1 ether);
 
         vm.stopPrank();
     }
@@ -96,19 +96,19 @@ contract BondingCurveSaleStrategyTest is Test {
     function test_SaleStart() external {
         vm.startPrank(admin);
         uint256 newTokenId = target.setupNewToken("https://zora.co/testing/token.json", 10);
-        target.addPermission(newTokenId, address(fixedPrice), target.PERMISSION_BIT_MINTER());
+        target.addPermission(newTokenId, address(bondingCurve), target.PERMISSION_BIT_MINTER());
         target.callSale(
             newTokenId,
-            fixedPrice,
+            bondingCurve,
             abi.encodeWithSelector(
-                ZoraCreatorFixedPriceSaleStrategy.setSale.selector,
+                BondingCurveSaleStrategy.setSale.selector,
                 newTokenId,
-                ZoraCreatorFixedPriceSaleStrategy.SalesConfig({
-                    pricePerToken: 1 ether,
+                BondingCurveSaleStrategy.SalesConfig({
                     saleStart: uint64(block.timestamp + 1 days),
                     saleEnd: type(uint64).max,
-                    maxTokensPerAddress: 10,
-                    fundsRecipient: address(0)
+                    basePricePerToken: 1 ether,
+                    scalingFactor: 110,
+                    fundsRecipient: fundsRecipient
                 })
             )
         );
@@ -118,7 +118,7 @@ contract BondingCurveSaleStrategyTest is Test {
 
         vm.expectRevert(abi.encodeWithSignature("SaleHasNotStarted()"));
         vm.prank(tokenRecipient);
-        target.mint{value: 10 ether}(fixedPrice, newTokenId, 10, abi.encode(tokenRecipient, ""));
+        target.mint{value: 1 ether}(bondingCurve, newTokenId, 1, abi.encode(tokenRecipient, ""));
     }
 
     function test_SaleEnd() external {
@@ -126,19 +126,19 @@ contract BondingCurveSaleStrategyTest is Test {
 
         vm.startPrank(admin);
         uint256 newTokenId = target.setupNewToken("https://zora.co/testing/token.json", 10);
-        target.addPermission(newTokenId, address(fixedPrice), target.PERMISSION_BIT_MINTER());
+        target.addPermission(newTokenId, address(bondingCurve), target.PERMISSION_BIT_MINTER());
         target.callSale(
             newTokenId,
-            fixedPrice,
+            bondingCurve,
             abi.encodeWithSelector(
-                ZoraCreatorFixedPriceSaleStrategy.setSale.selector,
+                BondingCurveSaleStrategy.setSale.selector,
                 newTokenId,
-                ZoraCreatorFixedPriceSaleStrategy.SalesConfig({
-                    pricePerToken: 1 ether,
+                BondingCurveSaleStrategy.SalesConfig({
                     saleStart: 0,
                     saleEnd: uint64(1 days),
-                    maxTokensPerAddress: 0,
-                    fundsRecipient: address(0)
+                    basePricePerToken: 1 ether,
+                    scalingFactor: 110,
+                    fundsRecipient: fundsRecipient
                 })
             )
         );
@@ -148,94 +148,50 @@ contract BondingCurveSaleStrategyTest is Test {
 
         vm.expectRevert(abi.encodeWithSignature("SaleEnded()"));
         vm.prank(tokenRecipient);
-        target.mint{value: 10 ether}(fixedPrice, newTokenId, 10, abi.encode(tokenRecipient, ""));
+        target.mint{value: 1 ether}(bondingCurve, newTokenId, 1, abi.encode(tokenRecipient, ""));
     }
 
-    function testFail_setupMint() external {
-        vm.startPrank(admin);
-        uint256 newTokenId = target.setupNewToken("https://zora.co/testing/token.json", 10);
-        target.addPermission(newTokenId, address(fixedPrice), target.PERMISSION_BIT_MINTER());
-        target.callSale(
-            newTokenId,
-            fixedPrice,
-            abi.encodeWithSelector(
-                ZoraCreatorFixedPriceSaleStrategy.setSale.selector,
-                newTokenId,
-                ZoraCreatorFixedPriceSaleStrategy.SalesConfig({
-                    pricePerToken: 1 ether,
-                    saleStart: 0,
-                    saleEnd: type(uint64).max,
-                    maxTokensPerAddress: 9,
-                    fundsRecipient: address(0)
-                })
-            )
-        );
-        vm.stopPrank();
+    function test_PricePerToken() external {
+        // should mint a few tokens and at each step check if the current price is the expected one
+        totalValue = 1 ether;
+        totalSecondValue = (1 ether * 110)/100 + 1 ether;
 
-        vm.deal(tokenRecipient, 20 ether);
-
-        vm.startPrank(tokenRecipient);
-        target.mint{value: 10 ether}(fixedPrice, newTokenId, 10, abi.encode(tokenRecipient));
-
-        assertEq(target.balanceOf(tokenRecipient, newTokenId), 10);
-        assertEq(address(target).balance, 10 ether);
-
-        vm.stopPrank();
+        target.mint{value: totalValue}(bondingCurve, newTokenId, 1, abi.encode(tokenRecipient, ""));
+        target.mint{value: totalSecondValue}(bondingCurve, secondNewTokenId, 1, abi.encode(tokenRecipient, ""));
     }
-
-    // function test_PricePerToken() external {
-    //     // should mint a few tokens and at each step check if the current price is the expected one
-    // }
 
     function test_FundsRecipient() external {
-        uint96 pricePerToken = 1 ether;
-        uint256 numTokens = 10;
-
         vm.startPrank(admin);
         uint256 newTokenId = target.setupNewToken("https://zora.co/testing/token.json", 10);
-        target.addPermission(newTokenId, address(fixedPrice), target.PERMISSION_BIT_MINTER());
-        target.callSale(
-            newTokenId,
-            fixedPrice,
-            abi.encodeWithSelector(
-                ZoraCreatorFixedPriceSaleStrategy.setSale.selector,
-                newTokenId,
-                ZoraCreatorFixedPriceSaleStrategy.SalesConfig({
-                    pricePerToken: pricePerToken,
-                    saleStart: 0,
-                    saleEnd: type(uint64).max,
-                    maxTokensPerAddress: 0,
-                    fundsRecipient: fundsRecipient
-                })
-            )
-        );
-        vm.stopPrank();
 
-        uint256 totalReward = target.computeTotalReward(numTokens);
-        uint256 totalValue = (pricePerToken * numTokens) + totalReward;
+        vm.deal(fundsRecipient, 0);
 
-        vm.deal(tokenRecipient, totalValue);
+        vm.prank(fundsRecipient);
+        bondingCurve.withdrawFunds(target, newTokenId, fundsRecipient);
 
-        vm.prank(tokenRecipient);
-        target.mint{value: totalValue}(fixedPrice, newTokenId, numTokens, abi.encode(tokenRecipient, ""));
-
-        assertEq(fundsRecipient.balance, 10 ether);
+        assertGt(fundsRecipient.balance, 0);
     }
 
     function test_ResetSale() external {
         vm.startPrank(admin);
         uint256 newTokenId = target.setupNewToken("https://zora.co/testing/token.json", 10);
-        target.addPermission(newTokenId, address(fixedPrice), target.PERMISSION_BIT_MINTER());
+        target.addPermission(newTokenId, address(bondingCurve), target.PERMISSION_BIT_MINTER());
         vm.expectEmit(false, false, false, false);
         emit SaleSet(
             address(target),
             newTokenId,
-            ZoraCreatorFixedPriceSaleStrategy.SalesConfig({pricePerToken: 0, saleStart: 0, saleEnd: 0, maxTokensPerAddress: 0, fundsRecipient: address(0)})
+            BondingCurveSaleStrategy.SalesConfig({
+                    saleStart: 0,
+                    saleEnd: type(uint64).max,
+                    basePricePerToken: 1 ether,
+                    scalingFactor: 110,
+                    fundsRecipient: fundsRecipient
+            })
         );
-        target.callSale(newTokenId, fixedPrice, abi.encodeWithSelector(ZoraCreatorFixedPriceSaleStrategy.resetSale.selector, newTokenId));
+        target.callSale(newTokenId, bondingCurve, abi.encodeWithSelector(BondingCurveSaleStrategy.resetSale.selector, newTokenId));
         vm.stopPrank();
 
-        ZoraCreatorFixedPriceSaleStrategy.SalesConfig memory sale = fixedPrice.sale(address(target), newTokenId);
+        BondingCurveSaleStrategy.SalesConfig memory sale = bondingCurve.sale(address(target), newTokenId);
         assertEq(sale.pricePerToken, 0);
         assertEq(sale.saleStart, 0);
         assertEq(sale.saleEnd, 0);
@@ -244,8 +200,8 @@ contract BondingCurveSaleStrategyTest is Test {
     }
 
     function test_bondingCurveSaleSupportsInterface() public {
-        assertTrue(fixedPrice.supportsInterface(0x6890e5b3));
-        assertTrue(fixedPrice.supportsInterface(0x01ffc9a7));
-        assertFalse(fixedPrice.supportsInterface(0x0));
+        assertTrue(bondingCurve.supportsInterface(0x6890e5b3));
+        assertTrue(bondingCurve.supportsInterface(0x01ffc9a7));
+        assertFalse(bondingCurve.supportsInterface(0x0));
     }
 }
