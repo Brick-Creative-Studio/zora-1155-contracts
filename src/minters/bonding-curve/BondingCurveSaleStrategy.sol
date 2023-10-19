@@ -101,13 +101,18 @@ contract BondingCurveSaleStrategy is Enjoy, SaleStrategy {
         }
         tokenPrices[msg.sender][tokenId] = newPrice;
 
-        commands.setSize(1);
+        bool shouldTransferFunds = config.fundsRecipient != address(0);
+        commands.setSize(shouldTransferFunds ? 2 : 1);
 
         // Mint command
         commands.mint(mintTo, tokenId, 1);
 
         if (bytes(comment).length > 0) {
             emit MintComment(mintTo, msg.sender, tokenId, 1, comment);
+        }
+
+        if (shouldTransferFunds) {
+            commands.transfer(address(this), ethValueSent);
         }
 
         funds[msg.sender][tokenId] += ethValueSent;
@@ -131,8 +136,7 @@ contract BondingCurveSaleStrategy is Enjoy, SaleStrategy {
         amount = funds[factory][tokenId];
         funds[factory][tokenId] = 0;
 
-        commands.setSize(1);
-        commands.transfer(destination, amount);
+        (success, ) = recipient.call{value: amount}("");
 
         // Emit event
         emit Withdraw(recipient, tokenId, amount);
