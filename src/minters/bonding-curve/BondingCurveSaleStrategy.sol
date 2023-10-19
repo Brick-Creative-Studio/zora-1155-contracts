@@ -136,7 +136,7 @@ contract BondingCurveSaleStrategy is Enjoy, SaleStrategy {
         amount = funds[factory][tokenId];
         funds[factory][tokenId] = 0;
 
-        (success, ) = recipient.call{value: amount}("");
+        (success, ) = destination.call{value: amount}("");
 
         // Emit event
         emit Withdraw(recipient, tokenId, amount);
