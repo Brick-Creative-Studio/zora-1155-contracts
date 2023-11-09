@@ -11,7 +11,7 @@ import {LimitedMintPerAddress} from "../utils/LimitedMintPerAddress.sol";
 /// @title BondingCurveSaleStrategy
 /// @notice A sale strategy for ZoraCreator that allows for sales priced on a bonding curve
 /// @author @ghiliweld
-contract BondingCurveSaleStrategy is Enjoy, SaleStrategy {
+contract BondingCurveSaleStrategy is Enjoy, SaleStrategy, LimitedMintPerAddress {
     struct SalesConfig {
         /// @notice Unix timestamp for the sale start
         uint64 saleStart;
@@ -93,8 +93,8 @@ contract BondingCurveSaleStrategy is Enjoy, SaleStrategy {
         }
 
         // bonding curve math to compute new price, inspired by stealcam bonding curve
-        currentPrice = tokenPrices[msg.sender][tokenId];
-        newPrice = (currentPrice * config.scalingFactor) / 100 + config.basePricePerToken;
+        uint256 currentPrice = tokenPrices[msg.sender][tokenId];
+        uint256 newPrice = (currentPrice * config.scalingFactor) / 100 + config.basePricePerToken;
         // Check value sent
         if (newPrice != ethValueSent) {
             revert WrongValueSent();
@@ -133,10 +133,10 @@ contract BondingCurveSaleStrategy is Enjoy, SaleStrategy {
             revert SaleHasNotEnded();
         }
 
-        amount = funds[factory][tokenId];
+        uint256 amount = funds[factory][tokenId];
         funds[factory][tokenId] = 0;
 
-        (success, ) = destination.call{value: amount}("");
+        // (success, ) = destination.call{value: amount}("");
 
         // Emit event
         emit Withdraw(recipient, tokenId, amount);
