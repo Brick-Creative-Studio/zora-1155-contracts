@@ -8,6 +8,8 @@ import {SaleStrategy} from "../SaleStrategy.sol";
 import {SaleCommandHelper} from "../utils/SaleCommandHelper.sol";
 import {LimitedMintPerAddress} from "../utils/LimitedMintPerAddress.sol";
 
+import {ISplitMain} from "/ISplitMain.sol";
+
 /// @title BondingCurveSaleStrategy
 /// @notice A sale strategy for ZoraCreator that allows for sales priced on a bonding curve
 /// @author @ghiliweld
@@ -32,6 +34,8 @@ contract BondingCurveSaleStrategy is Enjoy, SaleStrategy {
     mapping(address => mapping(uint256 => uint256)) internal tokenPrices;
 
     mapping(address => mapping(uint256 => uint256)) internal funds;
+
+    ISplitMain public sliptMain = ISplitMain(0x2ed6c4B5dA6378c7897AC67Ba9e43102Feb694EE);
 
     using SaleCommandHelper for ICreatorCommands.CommandSet;
 
@@ -119,7 +123,7 @@ contract BondingCurveSaleStrategy is Enjoy, SaleStrategy {
     }
 
     /// @notice Allows the fundsRecipient of a sale withdraw their funds
-    function withdrawFunds(address factory, uint256 tokenId, address destination) external {
+    function withdrawFunds(address factory, uint256 tokenId, bytes calldata splitArgs) external returns (address split) {
         SalesConfig storage config = salesConfigs[factory][tokenId];
         
         address recipient = config.fundsRecipient;
@@ -136,7 +140,28 @@ contract BondingCurveSaleStrategy is Enjoy, SaleStrategy {
         amount = funds[factory][tokenId];
         funds[factory][tokenId] = 0;
 
-        (success, ) = destination.call{value: amount}("");
+        (address[] calldata accounts, 
+        uint32[] calldata percentAllocations) = abi.decode(splitArgs, (address[], uint32[]));
+
+        // create split
+        address split = splitMain.createSplit(
+            accounts, 
+            percentAllocations, 
+            0,
+            address(0)
+        );
+
+        // forward funds to split
+        (success, ) = split.call{value: amount}("");
+
+        // distribute funds
+        splitMain.distributeETH(
+            split,
+            accounts, 
+            percentAllocations, 
+            0,
+            address(0)
+        );
 
         // Emit event
         emit Withdraw(recipient, tokenId, amount);
