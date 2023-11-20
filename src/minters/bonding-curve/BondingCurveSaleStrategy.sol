@@ -8,7 +8,7 @@ import {SaleStrategy} from "../SaleStrategy.sol";
 import {SaleCommandHelper} from "../utils/SaleCommandHelper.sol";
 import {LimitedMintPerAddress} from "../utils/LimitedMintPerAddress.sol";
 
-import {ISplitMain} from "/ISplitMain.sol";
+import {ISplitMain} from "./ISplitMain.sol";
 
 /// @title BondingCurveSaleStrategy
 /// @notice A sale strategy for ZoraCreator that allows for sales priced on a bonding curve
