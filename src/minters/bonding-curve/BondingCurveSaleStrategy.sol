@@ -97,8 +97,8 @@ contract BondingCurveSaleStrategy is Enjoy, SaleStrategy {
         }
 
         // bonding curve math to compute new price, inspired by stealcam bonding curve
-        currentPrice = tokenPrices[msg.sender][tokenId];
-        newPrice = (currentPrice * config.scalingFactor) / 100 + config.basePricePerToken;
+        uint256 currentPrice = tokenPrices[msg.sender][tokenId];
+        uint256 newPrice = (currentPrice * config.scalingFactor) / 100 + config.basePricePerToken;
         // Check value sent
         if (newPrice != ethValueSent) {
             revert WrongValueSent();
@@ -137,14 +137,14 @@ contract BondingCurveSaleStrategy is Enjoy, SaleStrategy {
             revert SaleHasNotEnded();
         }
 
-        amount = funds[factory][tokenId];
+        uint256 amount = funds[factory][tokenId];
         funds[factory][tokenId] = 0;
 
         (address[] calldata accounts, 
         uint32[] calldata percentAllocations) = abi.decode(splitArgs, (address[], uint32[]));
 
         // create split
-        address split = splitMain.createSplit(
+        split = splitMain.createSplit(
             accounts, 
             percentAllocations, 
             0,
