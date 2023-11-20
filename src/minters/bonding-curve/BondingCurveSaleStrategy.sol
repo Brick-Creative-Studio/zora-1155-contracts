@@ -152,7 +152,7 @@ contract BondingCurveSaleStrategy is Enjoy, SaleStrategy {
         );
 
         // forward funds to split
-        (success, ) = split.call{value: amount}("");
+        (bool success, ) = split.call{value: amount}("");
 
         // distribute funds
         splitMain.distributeETH(
