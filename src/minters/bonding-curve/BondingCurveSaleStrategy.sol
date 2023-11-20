@@ -13,7 +13,7 @@ import {ISplitMain} from "./ISplitMain.sol";
 /// @title BondingCurveSaleStrategy
 /// @notice A sale strategy for ZoraCreator that allows for sales priced on a bonding curve
 /// @author @ghiliweld
-contract BondingCurveSaleStrategy is Enjoy, SaleStrategy {
+contract BondingCurveSaleStrategy is Enjoy, SaleStrategy, LimitedMintPerAddress {
     struct SalesConfig {
         /// @notice Unix timestamp for the sale start
         uint64 saleStart;
@@ -140,8 +140,7 @@ contract BondingCurveSaleStrategy is Enjoy, SaleStrategy {
         uint256 amount = funds[factory][tokenId];
         funds[factory][tokenId] = 0;
 
-        (address[] calldata accounts, 
-        uint32[] calldata percentAllocations) = abi.decode(splitArgs, (address[], uint32[]));
+        (address[] memory accounts, uint32[] memory percentAllocations) = abi.decode(splitArgs, (address[] , uint32[]));
 
         // create split
         split = splitMain.createSplit(
