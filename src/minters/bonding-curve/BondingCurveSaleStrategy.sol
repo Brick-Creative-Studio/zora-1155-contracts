@@ -35,7 +35,7 @@ contract BondingCurveSaleStrategy is Enjoy, SaleStrategy {
 
     mapping(address => mapping(uint256 => uint256)) internal funds;
 
-    ISplitMain public sliptMain = ISplitMain(0x2ed6c4B5dA6378c7897AC67Ba9e43102Feb694EE);
+    ISplitMain public splitMain = ISplitMain(0x2ed6c4B5dA6378c7897AC67Ba9e43102Feb694EE);
 
     using SaleCommandHelper for ICreatorCommands.CommandSet;
 
