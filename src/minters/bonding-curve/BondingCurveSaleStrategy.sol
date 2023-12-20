@@ -54,10 +54,10 @@ contract BondingCurveSaleStrategy is Enjoy, SaleStrategy, LimitedMintPerAddress 
     }
 
     error WrongValueSent(uint256 expectedValue);
-    error SaleEnded(uint64 saleEnd);
-    error SaleHasNotStarted(uint64 saleStart);
-    error SaleHasNotEnded(uint64 saleEnd);
-    error UnauthorizedWithdraw(address recipient);
+    error SaleEnded();
+    error SaleHasNotStarted();
+    error SaleHasNotEnded();
+    error UnauthorizedWithdraw();
 
     event SaleSet(address indexed mediaContract, uint256 indexed tokenId, SalesConfig salesConfig);
     event MintComment(address indexed sender, address indexed tokenContract, uint256 indexed tokenId, uint256 quantity, string comment);
@@ -88,12 +88,12 @@ contract BondingCurveSaleStrategy is Enjoy, SaleStrategy, LimitedMintPerAddress 
 
         // Check sale end
         if (block.timestamp > config.saleEnd) {
-            revert SaleEnded(config.saleEnd);
+            revert SaleEnded();
         }
 
         // Check sale start
         if (block.timestamp < config.saleStart) {
-            revert SaleHasNotStarted(config.saleStart);
+            revert SaleHasNotStarted();
         }
 
         // bonding curve math to compute new price, inspired by stealcam bonding curve
@@ -129,12 +129,12 @@ contract BondingCurveSaleStrategy is Enjoy, SaleStrategy, LimitedMintPerAddress 
         address recipient = config.fundsRecipient;
 
         if (msg.sender != recipient) {
-            revert UnauthorizedWithdraw(recipient);
+            revert UnauthorizedWithdraw();
         }
 
         // Check sale end
         if (block.timestamp < config.saleEnd) {
-            revert SaleHasNotEnded(config.saleEnd);
+            revert SaleHasNotEnded();
         }
 
         uint256 amount = funds[factory][tokenId];
