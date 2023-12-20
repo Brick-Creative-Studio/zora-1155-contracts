@@ -53,11 +53,11 @@ contract BondingCurveSaleStrategy is Enjoy, SaleStrategy, LimitedMintPerAddress 
         return "1.1.0";
     }
 
-    error WrongValueSent();
-    error SaleEnded();
-    error SaleHasNotStarted();
-    error SaleHasNotEnded();
-    error UnauthorizedWithdraw();
+    error WrongValueSent(uint256 expectedValue);
+    error SaleEnded(uint64 saleEnd);
+    error SaleHasNotStarted(uint64 saleStart);
+    error SaleHasNotEnded(uint64 saleEnd);
+    error UnauthorizedWithdraw(address recipient);
 
     event SaleSet(address indexed mediaContract, uint256 indexed tokenId, SalesConfig salesConfig);
     event MintComment(address indexed sender, address indexed tokenContract, uint256 indexed tokenId, uint256 quantity, string comment);
@@ -88,12 +88,12 @@ contract BondingCurveSaleStrategy is Enjoy, SaleStrategy, LimitedMintPerAddress 
 
         // Check sale end
         if (block.timestamp > config.saleEnd) {
-            revert SaleEnded();
+            revert SaleEnded(config.saleEnd);
         }
 
         // Check sale start
         if (block.timestamp < config.saleStart) {
-            revert SaleHasNotStarted();
+            revert SaleHasNotStarted(config.saleStart);
         }
 
         // bonding curve math to compute new price, inspired by stealcam bonding curve
@@ -101,7 +101,7 @@ contract BondingCurveSaleStrategy is Enjoy, SaleStrategy, LimitedMintPerAddress 
         uint256 newPrice = (currentPrice * config.scalingFactor) / 100 + config.basePricePerToken;
         // Check value sent
         if (newPrice != ethValueSent) {
-            revert WrongValueSent();
+            revert WrongValueSent(newPrice);
         }
         tokenPrices[msg.sender][tokenId] = newPrice;
 
@@ -129,12 +129,12 @@ contract BondingCurveSaleStrategy is Enjoy, SaleStrategy, LimitedMintPerAddress 
         address recipient = config.fundsRecipient;
 
         if (msg.sender != recipient) {
-            revert UnauthorizedWithdraw();
+            revert UnauthorizedWithdraw(recipient);
         }
 
         // Check sale end
         if (block.timestamp < config.saleEnd) {
-            revert SaleHasNotEnded();
+            revert SaleHasNotEnded(config.saleEnd);
         }
 
         uint256 amount = funds[factory][tokenId];
