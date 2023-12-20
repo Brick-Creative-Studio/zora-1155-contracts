@@ -187,6 +187,13 @@ contract BondingCurveSaleStrategy is Enjoy, SaleStrategy, LimitedMintPerAddress 
         return salesConfigs[tokenContract][tokenId];
     }
 
+    /// @notice Returns currentTokenPrice
+    function currentTokenPrice(uint256 tokenId) external view returns (uint256) {
+        return tokenPrices[msg.sender][tokenId];
+    }
+
+
+
     function supportsInterface(bytes4 interfaceId) public pure virtual override(LimitedMintPerAddress, SaleStrategy) returns (bool) {
         return super.supportsInterface(interfaceId) || SaleStrategy.supportsInterface(interfaceId);
     }
