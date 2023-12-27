@@ -53,7 +53,7 @@ contract BondingCurveSaleStrategy is Enjoy, SaleStrategy, LimitedMintPerAddress 
         return "1.1.0";
     }
 
-    error WrongValueSent(uint256 expectedValue);
+    error WrongValueSent();
     error SaleEnded();
     error SaleHasNotStarted();
     error SaleHasNotEnded();
@@ -101,9 +101,7 @@ contract BondingCurveSaleStrategy is Enjoy, SaleStrategy, LimitedMintPerAddress 
         uint256 newPrice = (currentPrice * config.scalingFactor) / 100 + config.basePricePerToken;
         // Check value sent
         if (newPrice != ethValueSent) {
-            revert WrongValueSent({
-                expectedValue: newPrice
-                });
+            revert WrongValueSent();
         }
         tokenPrices[msg.sender][tokenId] = newPrice;
 
