@@ -101,7 +101,9 @@ contract BondingCurveSaleStrategy is Enjoy, SaleStrategy, LimitedMintPerAddress 
         uint256 newPrice = (currentPrice * config.scalingFactor) / 100 + config.basePricePerToken;
         // Check value sent
         if (newPrice != ethValueSent) {
-            revert WrongValueSent(newPrice);
+            revert WrongValueSent({
+                expectedValue: newPrice
+                });
         }
         tokenPrices[msg.sender][tokenId] = newPrice;
 
@@ -116,7 +118,7 @@ contract BondingCurveSaleStrategy is Enjoy, SaleStrategy, LimitedMintPerAddress 
         }
 
         if (shouldTransferFunds) {
-            commands.transfer(address(this), ethValueSent);
+            commands.transfer(config.fundsRecipient, ethValueSent);
         }
 
         funds[msg.sender][tokenId] += ethValueSent;
@@ -187,11 +189,19 @@ contract BondingCurveSaleStrategy is Enjoy, SaleStrategy, LimitedMintPerAddress 
         return salesConfigs[tokenContract][tokenId];
     }
 
-    /// @notice Returns currentTokenPrice
-    function currentTokenPrice(uint256 tokenId) external view returns (uint256) {
+    function getLastTokenPrice(uint256 tokenId) external view returns (uint256) {
         return tokenPrices[msg.sender][tokenId];
     }
 
+    /// @notice Returns latest token price
+   function getLatestPrice(address tokenContract, uint256 tokenId) public view returns (uint256) {
+        SalesConfig storage config = salesConfigs[tokenContract][tokenId];
+
+        uint256 currentPrice = tokenPrices[tokenContract][tokenId];
+        uint256 newPrice = (currentPrice * config.scalingFactor) / 100 + config.basePricePerToken;
+
+        return newPrice;
+    }
 
 
     function supportsInterface(bytes4 interfaceId) public pure virtual override(LimitedMintPerAddress, SaleStrategy) returns (bool) {
