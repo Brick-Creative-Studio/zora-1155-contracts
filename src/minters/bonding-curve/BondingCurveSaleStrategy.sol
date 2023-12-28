@@ -33,6 +33,10 @@ contract BondingCurveSaleStrategy is Enjoy, SaleStrategy, LimitedMintPerAddress 
     // target -> tokenId -> token price
     mapping(address => mapping(uint256 => uint256)) internal tokenPrices;
 
+    // target -> tokenId -> tokens minted
+    mapping(address => mapping(uint256 => uint256)) public tokensMinted;
+
+
     mapping(address => mapping(uint256 => uint256)) internal funds;
 
     ISplitMain public splitMain = ISplitMain(0x2ed6c4B5dA6378c7897AC67Ba9e43102Feb694EE);
@@ -96,9 +100,17 @@ contract BondingCurveSaleStrategy is Enjoy, SaleStrategy, LimitedMintPerAddress 
             revert SaleHasNotStarted();
         }
 
+        uint256 tokenCount = tokensMinted[msg.sender][tokenId];
+
+        uint256 newPrice;
         // bonding curve math to compute new price, inspired by stealcam bonding curve
         uint256 currentPrice = tokenPrices[msg.sender][tokenId];
-        uint256 newPrice = (currentPrice * config.scalingFactor) / 100 + config.basePricePerToken;
+        
+        if(tokenCount % 10 == 0 && tokenCount != 0){
+             newPrice = (currentPrice * config.scalingFactor) / 100 + config.basePricePerToken;
+        } else {
+            newPrice = currentPrice;
+        }
         // Check value sent
         if (newPrice != ethValueSent) {
             revert WrongValueSent();
@@ -120,6 +132,8 @@ contract BondingCurveSaleStrategy is Enjoy, SaleStrategy, LimitedMintPerAddress 
         }
 
         funds[msg.sender][tokenId] += ethValueSent;
+        
+        tokensMinted[msg.sender][tokenId] = tokenCount + 1;
     }
 
     /// @notice Allows the fundsRecipient of a sale withdraw their funds
