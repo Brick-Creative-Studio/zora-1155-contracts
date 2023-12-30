@@ -21,6 +21,8 @@ contract BondingCurveSaleStrategy is Enjoy, SaleStrategy, LimitedMintPerAddress 
         uint64 saleEnd;
         /// @notice Base price per token in eth wei
         uint96 basePricePerToken;
+        /// @notice Initial price of token in eth wei
+        uint96 initialTokenPrice;
         /// @notice Scaling factor that controls how the price grows
         uint96 scalingFactor;
         /// @notice Funds recipient (0 if no different funds recipient than the contract global)
@@ -103,12 +105,16 @@ contract BondingCurveSaleStrategy is Enjoy, SaleStrategy, LimitedMintPerAddress 
         uint256 tokenCount = tokensMinted[msg.sender][tokenId];
 
         uint256 newPrice;
+
         // bonding curve math to compute new price, inspired by stealcam bonding curve
         uint256 currentPrice = tokenPrices[msg.sender][tokenId];
-        
-        if(tokenCount % 10 == 0){
+        if(tokenCount == 0){
+            //ensure initial value is calculated into current price
+             newPrice = (currentPrice * config.scalingFactor) / 100 + config.initialTokenPrice;
+        } else if(tokenCount % 10 == 0){
              newPrice = (currentPrice * config.scalingFactor) / 100 + config.basePricePerToken;
         } else {
+            //keep price the same if we haven't reached the next wave
             newPrice = currentPrice;
         }
         // Check value sent
