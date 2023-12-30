@@ -210,16 +210,29 @@ contract BondingCurveSaleStrategy is Enjoy, SaleStrategy, LimitedMintPerAddress 
         return salesConfigs[tokenContract][tokenId];
     }
 
-    function getLastTokenPrice(uint256 tokenId) external view returns (uint256) {
-        return tokenPrices[msg.sender][tokenId];
+    function getPreviousTokenPrice(address tokenContract, uint256 tokenId) public view returns (uint256) {
+        return tokenPrices[tokenContract][tokenId];
     }
 
     /// @notice Returns latest token price
-   function getLatestPrice(address tokenContract, uint256 tokenId) public view returns (uint256) {
+   function getNextTokenPrice(address tokenContract, uint256 tokenId) public view returns (uint256) {
         SalesConfig storage config = salesConfigs[tokenContract][tokenId];
 
+        uint256 newPrice;
+        uint256 tokenCount = tokensMinted[msg.sender][tokenId];
         uint256 currentPrice = tokenPrices[tokenContract][tokenId];
-        uint256 newPrice = (currentPrice * config.scalingFactor) / 100 + config.basePricePerToken;
+
+         if(tokenCount == 0){
+            //ensure initial value is calculated into current price
+             newPrice = (currentPrice * config.scalingFactor) / 100 + config.initialTokenPrice;
+        } else if(tokenCount % 10 == 0){
+             newPrice = (currentPrice * config.scalingFactor) / 100 + config.basePricePerToken;
+        } else {
+            //keep price the same if we haven't reached the next wave
+            newPrice = currentPrice;
+        }
+
+        newPrice = (currentPrice * config.scalingFactor) / 100 + config.basePricePerToken;
 
         return newPrice;
     }

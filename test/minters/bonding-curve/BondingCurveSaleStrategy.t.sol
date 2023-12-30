@@ -58,6 +58,7 @@ contract BondingCurveSaleStrategyTest is Test {
                 saleEnd: type(uint64).max,
                 basePricePerToken: 1 ether,
                 scalingFactor: 110,
+                initialTokenPrice: 1 ether,
                 fundsRecipient: fundsRecipient
             })
         );
@@ -72,6 +73,7 @@ contract BondingCurveSaleStrategyTest is Test {
                     saleEnd: type(uint64).max,
                     basePricePerToken: 1 ether,
                     scalingFactor: 110,
+                    initialTokenPrice: 1 ether,
                     fundsRecipient: fundsRecipient
                 })
             )
@@ -108,6 +110,7 @@ contract BondingCurveSaleStrategyTest is Test {
                     saleEnd: type(uint64).max,
                     basePricePerToken: 1 ether,
                     scalingFactor: 110,
+                    initialTokenPrice: 1 ether,
                     fundsRecipient: fundsRecipient
                 })
             )
@@ -138,6 +141,7 @@ contract BondingCurveSaleStrategyTest is Test {
                     saleEnd: uint64(1 days),
                     basePricePerToken: 1 ether,
                     scalingFactor: 110,
+                    initialTokenPrice: 1 ether,
                     fundsRecipient: fundsRecipient
                 })
             )
