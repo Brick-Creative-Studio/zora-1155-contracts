@@ -34,7 +34,7 @@ contract BondingCurveSaleStrategy is Enjoy, SaleStrategy, LimitedMintPerAddress 
     mapping(address => mapping(uint256 => uint256)) internal tokenPrices;
 
     // target -> tokenId -> tokens minted
-    mapping(address => mapping(uint256 => uint256)) public tokensMinted;
+    mapping(address => mapping(uint256 => uint256)) internal tokensMinted;
 
 
     mapping(address => mapping(uint256 => uint256)) internal funds;
@@ -106,7 +106,7 @@ contract BondingCurveSaleStrategy is Enjoy, SaleStrategy, LimitedMintPerAddress 
         // bonding curve math to compute new price, inspired by stealcam bonding curve
         uint256 currentPrice = tokenPrices[msg.sender][tokenId];
         
-        if(tokenCount % 10 == 0 && tokenCount != 0){
+        if(tokenCount % 10 == 0){
              newPrice = (currentPrice * config.scalingFactor) / 100 + config.basePricePerToken;
         } else {
             newPrice = currentPrice;
@@ -122,6 +122,10 @@ contract BondingCurveSaleStrategy is Enjoy, SaleStrategy, LimitedMintPerAddress 
 
         // Mint command
         commands.mint(mintTo, tokenId, 1);
+    
+        //increase tokens minted
+        tokensMinted[msg.sender][tokenId] = tokenCount + 1;
+
 
         if (bytes(comment).length > 0) {
             emit MintComment(mintTo, msg.sender, tokenId, 1, comment);
@@ -133,7 +137,6 @@ contract BondingCurveSaleStrategy is Enjoy, SaleStrategy, LimitedMintPerAddress 
 
         funds[msg.sender][tokenId] += ethValueSent;
         
-        tokensMinted[msg.sender][tokenId] = tokenCount + 1;
     }
 
     /// @notice Allows the fundsRecipient of a sale withdraw their funds
