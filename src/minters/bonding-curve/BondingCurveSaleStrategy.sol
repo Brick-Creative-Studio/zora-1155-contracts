@@ -231,9 +231,6 @@ contract BondingCurveSaleStrategy is Enjoy, SaleStrategy, LimitedMintPerAddress 
             //keep price the same if we haven't reached the next wave
             newPrice = currentPrice;
         }
-
-        newPrice = (currentPrice * config.scalingFactor) / 100 + config.basePricePerToken;
-
         return newPrice;
     }
 
