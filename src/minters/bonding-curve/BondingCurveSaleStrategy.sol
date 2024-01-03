@@ -219,7 +219,7 @@ contract BondingCurveSaleStrategy is Enjoy, SaleStrategy, LimitedMintPerAddress 
         SalesConfig storage config = salesConfigs[tokenContract][tokenId];
 
         uint256 newPrice;
-        uint256 tokenCount = tokensMinted[msg.sender][tokenId];
+        uint256 tokenCount = tokensMinted[tokenContract][tokenId];
         uint256 currentPrice = tokenPrices[tokenContract][tokenId];
 
          if(tokenCount == 0){
